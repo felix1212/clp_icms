@@ -2,18 +2,35 @@ import requests
 import time
 from datetime import datetime, timedelta, timezone
 import json
+import configparser
+import os
 
+
+def load_config():
+    """Load configuration from settings.ini file."""
+    config = configparser.ConfigParser()
+    config_path = os.path.join(os.path.dirname(__file__), 'settings.ini')
+    
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+    
+    config.read(config_path)
+    return config
+
+
+# Load configuration
+config = load_config()
 
 # === CONFIGURATION ===
-USERNAME = "datadog-client"
-PASSWORD = "9uEr8xkouLpA59hEvw4fYbX0UjY8EBOw"
-TOKEN_URL = "https://uat.clp-nprod.ecaas.cloud/rest/v1/auth/token"
-DATA_URL = "https://uat.clp-nprod.ecaas.cloud/rest/v1/domain/data/ZXC_DATADOG_JOURNAL"
-TIMEZONE = timezone(timedelta(hours=8))
-WINDOW_MINUTES = 5
-QA = "*"
-STRIPMETA = "true"
-LOOP_INTERVAL_SECONDS = 5 * 60
+USERNAME = config['Authentication']['username']
+PASSWORD = config['Authentication']['password']
+TOKEN_URL = config['Authentication']['token_url']
+DATA_URL = config['API']['data_url']
+TIMEZONE = timezone(timedelta(hours=int(config['Time']['timezone_hours'])))
+WINDOW_MINUTES = int(config['Time']['window_minutes'])
+QA = config['API']['qa']
+STRIPMETA = config['API']['stripmeta']
+LOOP_INTERVAL_SECONDS = int(config['Time']['loop_interval_seconds'])
 
 def get_time_range(minutes: int):
     """Return (start_time_str, end_time_str) in ISO format for GMT+8."""
