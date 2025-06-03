@@ -38,3 +38,4 @@ ENV/
 settings.ini
 *.log
 logs/
+*.json
