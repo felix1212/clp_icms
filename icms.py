@@ -8,9 +8,8 @@ import os
 from pathlib import Path
 import logging
 
-# Logger
+# Create Logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s')
 handler.setFormatter(formatter)
@@ -29,8 +28,13 @@ def load_config():
     logger.debug("Configuration loaded successfully")
     return config
 
-# Load configuration
+# Load configuration from settings.ini
 config = load_config()
+
+# Set log level from config
+log_level_str = config['Config']['log_level'].upper()
+log_level = getattr(logging, log_level_str, logging.INFO)  # Default to INFO if invalid level
+logger.setLevel(log_level)
 
 # === CONFIGURATION ===
 USERNAME = config['Authentication']['username']
@@ -38,12 +42,11 @@ PASSWORD = config['Authentication']['password']
 TOKEN_URL = config['Authentication']['token_url']
 DATA_URL = config['API']['data_url']
 TIMEZONE = timezone(timedelta(hours=int(config['Time']['timezone_hours'])))
-WINDOW_MINUTES = int(config['Time']['window_minutes'])
+WINDOW_MINUTES = int(config['API']['window_minutes'])
 QA = config['API']['qa']
 STRIPMETA = config['API']['stripmeta']
 LOOP_INTERVAL_SECONDS = int(config['Time']['loop_interval_seconds'])
 DD_API_KEY = config['Authentication']['dd_api_key']
-DD_APPLICATION_KEY = config['Authentication']['dd_application_key']
 DATADOG_URL = config['API']['datadog_url']
 DD_HOST = config['API']['dd_host']
 DD_SERVICE = config['API']['dd_service']
@@ -160,7 +163,6 @@ def send_to_datadog(transformed_data: list) -> int:
     """
     headers = {
         "DD-API-KEY": DD_API_KEY,
-        "DD-APPLICATION-KEY": DD_APPLICATION_KEY,
         "Accept": "*/*",
         "Content-Type": "application/json",
         "Accept-Encoding": "gzip, deflate, br"
@@ -179,7 +181,7 @@ def send_to_datadog(transformed_data: list) -> int:
 def main():
     # Step 1: Calculate time range
     start_time, end_time = get_time_range(WINDOW_MINUTES)
-    logger.info(f"Time window: {start_time} → {end_time}")
+    logger.info(f"Time window: {start_time} → {end_time} (Past {WINDOW_MINUTES} minutes)")
 
     # Step 2: Build query condition list
     qc_list = [
